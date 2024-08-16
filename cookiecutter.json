@@ -1,0 +1,9 @@
+{
+    "project_name":"test",
+    "development_mode": ["template", "api", "both"],
+    "use_ckeditor": "y",
+    "use_cloud_storage": "y",
+    "cache_system": ["redis", "memcached", "filebase"],
+    "email_backend": ["console", "gmail"],
+    "use_celery": "y"
+}

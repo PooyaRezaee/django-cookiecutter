@@ -1,0 +1,112 @@
+version: '3.9'
+
+networks:
+  default:
+    name: web_net
+
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py migrate &&
+            python manage.py collectstatic --no-input --clear &&
+            gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    container_name: web_application
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
+      {% if cookiecutter.use_celery == 'y' or cookiecutter.cache_system == 'redis'%}
+      - REDIS_LOCATION=redis://redis:6379
+      {% endif %}
+      {% if cookiecutter.use_celery == 'y' %}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      {% endif %}
+
+    volumes:
+      - static_volume:/app/staticfiles
+      {% if cookiecutter.use_cloud_storage != "y" %}
+      - media_volume:/app/media
+      {% endif %}
+    depends_on:
+      - db
+      {% if cookiecutter.use_celery == 'y' or cookiecutter.cache_system == 'redis'%}
+      - redis
+      {% endif %}
+    restart: always
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - 80:80
+    volumes:
+      - static_volume:/app/staticfiles
+      {% if cookiecutter.use_cloud_storage != "y" %}
+      - media_volume:/app/media
+      {% endif %}
+    depends_on:
+      - web
+    restart: always
+{% if cookiecutter.use_celery == 'y' or cookiecutter.cache_system == 'redis'%}
+  redis:
+    image: redis:latest
+    volumes:
+      - redis_data:/data
+    restart: always
+{% endif %}
+
+{% if cookiecutter.use_celery == 'y' %}
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "celery -A apps.tasks worker -l info --without-gossip --without-mingle --without-heartbeat"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
+      - REDIS_LOCATION=redis://redis:6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - web
+    restart: always
+    
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "celery -A apps.tasks beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
+      - REDIS_LOCATION=redis://redis:6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - web
+    restart: always
+{% endif %}
+
+volumes:
+  postgres_data:
+  {% if cookiecutter.use_celery == 'y' or cookiecutter.cache_system == 'redis'%}
+  redis_data:
+  {% endif %}
+  static_volume:
+  {% if cookiecutter.use_cloud_storage != "y" %}
+  media_volume:
+  {% endif %}

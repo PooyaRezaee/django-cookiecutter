@@ -1,0 +1,17 @@
+/* .ck.ck-editor {
+    color: black !important;
+} */
+.ck {
+    background-color: black !important;
+    color: white !important;
+}
+.ck-button__icon{
+    color: white !important;
+}
+.ck-dropdown__button{
+    color: white !important
+}
+.ck-content {
+    direction: rtl;
+    text-align: right;
+}

@@ -1,0 +1,16 @@
+__pycache__
+venv
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.git
+*.env
+*.idea
+*.vscode
+.DS_Store
+README.md
+docker-compose.yaml
+new_app.py
+logs
