@@ -50,7 +50,6 @@ elif development_mode == 'api':
         
     remove_path(os.path.join(project_directory, 'apps/account/api/'))
     remove_path(os.path.join(project_directory, 'apps/sample/api/'))
-    remove_path(os.path.join(project_directory, 'apps/account/templates/'))
 
 # Handling use_ckeditor
 use_ckeditor = '{{ cookiecutter.use_ckeditor }}'.lower()
